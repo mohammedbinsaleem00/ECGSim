@@ -23,7 +23,12 @@ bool VoltageControllerProbe()
 	return MCP4725_isConnected(&VoltageControllerDevice);
 }
 
-void VoltageControllerSetVoltage(uint16_t value)
+void VoltageControllerSetRawVoltage(uint16_t value)
 {
 	MCP4725_setValue(&VoltageControllerDevice, value, MCP4725_FAST_MODE, MCP4725_POWER_DOWN_OFF);
+}
+
+void VoltageControllerSetVoltage(float value)
+{
+	MCP4725_setVoltage(&VoltageControllerDevice, value, MCP4725_FAST_MODE, MCP4725_POWER_DOWN_OFF);
 }

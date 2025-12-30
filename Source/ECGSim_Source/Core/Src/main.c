@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "VoltageController.h"
+
+#include "OsApplication.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,15 +92,20 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
+//  MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  VoltageControllerInit();
+
+
+//  VoltageControllerSetVoltage(0.245);
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
-  MX_FREERTOS_Init();
+//  MX_FREERTOS_Init();
+  OsAppLowerLayerInit();
+  OsAppUpperLayerInit();
+  OsAppCreateTasks();
 
   /* Start scheduler */
   osKernelStart();

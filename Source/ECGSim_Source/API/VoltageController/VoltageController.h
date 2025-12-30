@@ -15,6 +15,7 @@
 
 void VoltageControllerInit(void);
 bool VoltageControllerProbe(void);
-void VoltageControllerSetVoltage(uint16_t value);
+void VoltageControllerSetRawVoltage(uint16_t value);
+void VoltageControllerSetVoltage(float value);
 
 #endif /* API_VOLTAGECONTROLLER_VOLTAGECONTROLLER_H_ */
