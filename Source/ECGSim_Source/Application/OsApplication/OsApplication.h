@@ -11,6 +11,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "main.h"
+#include "task.h"
 
 #define BASIC_TASK_TIME_PERIOD_MS				1000
 #define GENERATE_ECG_TASK_TIME_PERIOD_MS		1

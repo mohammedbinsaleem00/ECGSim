@@ -9,53 +9,87 @@
 #include "OsApplication.h"
 #include "ECGGeneratorApplication.h"
 #include "VoltageController.h"
+#include "customUART.h"
+#include "CLIApplication.h"
 
 osThreadId_t basicTaskHandle;
-
 const osThreadAttr_t basicTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
-osThreadId_t generateEcgTaskHandle;
 
-const osThreadAttr_t generateEcgTask_attributes = {
-  .name = "generateEcgTask",
+
+
+
+osThreadId_t ecgWorkerTaskHandle;
+const osThreadAttr_t ecgWorkerTask_attributes = {
+  .name = "ecgWorkerTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityNormal,
 };
+
+osThreadId_t cliTaskHandle;
+const osThreadAttr_t cliTask_attributes = {
+  .name = "cliTask",
+  .stack_size = 1024,//128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 
 void basicTask(void *argument)
 {
-	for(;;)
-	{
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		osDelay(BASIC_TASK_TIME_PERIOD_MS);
-	}
+    uint32_t lastWakeTime = osKernelGetTickCount();
+
+    for (;;)
+    {
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        osDelayUntil(lastWakeTime + BASIC_TASK_TIME_PERIOD_MS);
+        lastWakeTime += BASIC_TASK_TIME_PERIOD_MS;
+    }
 }
 
-void generateEcgTask(void* argument)
+
+void ecgWorkerTask(void *argument)
+{
+
+    uint32_t lastWakeTime = osKernelGetTickCount();
+    for (;;)
+    {
+
+        exportEcg();
+
+        osDelayUntil(lastWakeTime + GENERATE_ECG_TASK_TIME_PERIOD_MS);
+        lastWakeTime += GENERATE_ECG_TASK_TIME_PERIOD_MS;
+    }
+}
+
+void cliTask(void *argument)
 {
 	for(;;)
 	{
-		generateEcg();
-		osDelay(GENERATE_ECG_TASK_TIME_PERIOD_MS);
+		CLI_Process();
 	}
 }
-
 void OsAppCreateTasks(void)
 {
 	basicTaskHandle = osThreadNew(basicTask, NULL, &basicTask_attributes);
-	generateEcgTaskHandle = osThreadNew(basicTask, NULL, &basicTask_attributes);
+	cliTaskHandle = osThreadNew(cliTask, NULL, &cliTask_attributes);
+	ecgWorkerTaskHandle = osThreadNew(ecgWorkerTask, NULL, &ecgWorkerTask_attributes);
+
+	configASSERT(basicTaskHandle != NULL);
+	configASSERT(cliTaskHandle != NULL);
+	configASSERT(ecgWorkerTaskHandle != NULL);
 }
 
 void OsAppLowerLayerInit(void)
 {
+	UART_Init(DEBUG_UART);
 	VoltageControllerInit();
 }
 
 void OsAppUpperLayerInit(void)
 {
-	ecgGeneratorAppInit();
+//	ecgGeneratorAppInit();
 }

@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "i2c.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -92,10 +93,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-//  MX_I2C1_Init();
+  MX_I2C1_Init();
   MX_TIM2_Init();
+//  MX_USART1_UART_Init();
+//  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  OsAppLowerLayerInit();
+  OsAppUpperLayerInit();
 
 //  VoltageControllerSetVoltage(0.245);
   /* USER CODE END 2 */
@@ -103,17 +107,17 @@ int main(void)
   /* Init scheduler */
   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
 //  MX_FREERTOS_Init();
-  OsAppLowerLayerInit();
-  OsAppUpperLayerInit();
-  OsAppCreateTasks();
 
   /* Start scheduler */
-  osKernelStart();
+//  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  OsAppCreateTasks();
+  osKernelStart();
   while (1)
   {
     /* USER CODE END WHILE */

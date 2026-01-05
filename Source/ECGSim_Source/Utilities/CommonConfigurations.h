@@ -25,5 +25,5 @@
 #define ECG_DAC_PP_CODES  ((ECG_DAC_PP_VOLTS / DAC_VREF) * DAC_MAX_CODE)
 #define ECG_DAC_HALF_SWING  (ECG_DAC_PP_CODES / 2.0f)   // ≈ 1863
 
-
+#define IS_VALID_PNTR(X) ((NULL != X )?true:false)
 #endif /* UTILITIES_COMMONCONFIGURATIONS_H_ */
