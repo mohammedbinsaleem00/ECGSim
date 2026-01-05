@@ -11,6 +11,7 @@
 #include "VoltageController.h"
 #include "customUART.h"
 #include "CLIApplication.h"
+#include "TriggerDetectApplication.h"
 
 osThreadId_t basicTaskHandle;
 const osThreadAttr_t basicTask_attributes = {
@@ -34,6 +35,13 @@ osThreadId_t cliTaskHandle;
 const osThreadAttr_t cliTask_attributes = {
   .name = "cliTask",
   .stack_size = 1024,//128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+osThreadId_t triggerTaskHandle;
+const osThreadAttr_t triggerTask_attributes = {
+  .name = "triggerTask",
+  .stack_size = 512,//128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -72,20 +80,31 @@ void cliTask(void *argument)
 		CLI_Process();
 	}
 }
+
+void triggerTask(void *argument)
+{
+	for(;;)
+	{
+		triggerProcess();
+	}
+}
 void OsAppCreateTasks(void)
 {
 	basicTaskHandle = osThreadNew(basicTask, NULL, &basicTask_attributes);
 	cliTaskHandle = osThreadNew(cliTask, NULL, &cliTask_attributes);
+	triggerTaskHandle = osThreadNew(triggerTask, NULL, &triggerTask_attributes);
 	ecgWorkerTaskHandle = osThreadNew(ecgWorkerTask, NULL, &ecgWorkerTask_attributes);
 
 	configASSERT(basicTaskHandle != NULL);
 	configASSERT(cliTaskHandle != NULL);
+	configASSERT(triggerTaskHandle != NULL);
 	configASSERT(ecgWorkerTaskHandle != NULL);
 }
 
 void OsAppLowerLayerInit(void)
 {
 	UART_Init(DEBUG_UART);
+	UART_Init(TRIGGER_UART);
 	VoltageControllerInit();
 }
 
