@@ -3,7 +3,7 @@ name: Build and Release EXE on -BUILD tags
 on:
   push:
     tags:
-      - "*-BUILD"
+      - 'v*'
 
 jobs:
   build:
