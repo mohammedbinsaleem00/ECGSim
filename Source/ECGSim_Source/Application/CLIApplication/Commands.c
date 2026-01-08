@@ -11,6 +11,7 @@
 
 #include "CLIApplication.h"
 #include "ECGGeneratorApplication.h"
+#include "Stopwatch.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -38,7 +39,7 @@
 #define COMMAND_PRINT_FIRMWARE_INFO 	"GetFirmwareInfo"
 #define COMMAND_INITIATE_ECG_DOWNLOAD 	"InitiateEcgDownload"
 #define COMMAND_DOWNLOAD_ECG_DATA 		"DownloadEcgData"
-
+#define COMMAND_GET_AVG_TRIGGER_TIME	"GetAvgTriggerTime"
 
 
 //Encryption Test Commands
@@ -50,11 +51,12 @@ char ackText[5] = "\nok";
 static int printFirmwareInfo(int argc, char* argv[]);
 static int initiateEcgDownloadFn(int argc, char * argv[]);
 static int ecgDownloadFn(int argc, char * argv[]);
-
+static int ecgGetAvgTriggerTime(int argc, char* argv[]);
 const CommandLineEntry_t g_commandTable[]={
 		{COMMAND_PRINT_FIRMWARE_INFO, printFirmwareInfo},
 		{COMMAND_INITIATE_ECG_DOWNLOAD, initiateEcgDownloadFn},
 		{COMMAND_DOWNLOAD_ECG_DATA, ecgDownloadFn},
+		{COMMAND_GET_AVG_TRIGGER_TIME,ecgGetAvgTriggerTime},
 		{0,0} // End of List. Always required
 };
 
@@ -111,4 +113,17 @@ int ecgDownloadFn(int argc, char * argv[])
 	}
 	else
 		return E_COMMAND_BAD_COMMAND;
+}
+uint32_t avgLapTime_ms;
+int ecgGetAvgTriggerTime(int argc, char* argv[])
+{
+	if(argc < 1)
+	{
+		return E_COMMAND_FEW_ARGS;
+	}
+	getAverageLapTime(&triggerSw, &avgLapTime_ms);
+	char str[30];
+	int len = sprintf(str,"Avg: %lu ms\n",avgLapTime_ms);
+	CLI_Print(str,len);
+	return E_COMMAND_GOOD_COMMAND;
 }

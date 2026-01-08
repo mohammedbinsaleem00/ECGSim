@@ -9,8 +9,8 @@
 #include "ecgWaveGenerator.h"
 #include "CommonConfigurations.h"
 #include "VoltageController.h"
-
-
+#include "TriggerDetectApplication.h"
+#include "Stopwatch.h"
 
 
 ecg_config_t g_ecgConfig = {
@@ -90,6 +90,20 @@ void generateEcgWaveformData()
 
 }
 
+int beatPeakDetect(int total_samples, uint16_t* ecg_waveform)
+{
+    uint16_t max_value = 0;
+    int peak_index = -1;
+
+    for (int i = 0; i < total_samples; i++) {
+        if (ecg_waveform[i] > max_value) {
+            max_value = ecg_waveform[i];
+            peak_index = i;
+        }
+    }
+
+    return peak_index;
+}
 
 void exportEcg()
 {
@@ -101,6 +115,10 @@ void exportEcg()
 	
 	if (g_waveformIndex < g_waveformSize)
 	{
+		if(g_waveformIndex == g_peakIndex)
+		{
+			startStopwatch(&triggerSw);
+		}
 		VoltageControllerSetRawVoltage(g_rawControllerData[g_waveformIndex++]);
 	}
 	else
@@ -128,6 +146,7 @@ bool initiateEcgDownload(uint16_t totalDownloadSize)
 		g_ecgDownloadTotalSize = totalDownloadSize;
 		g_ecgDownloadProgress = 0;
 		g_ecgDownloadState = ECG_DOWNLOAD_IN_PROCESS;
+		pauseTriggerDetect();
 		return true;
 	}
 	return false;
@@ -149,6 +168,8 @@ bool downloadEcgData(uint16_t currentProgress, uint16_t currentData)
 			{
 				g_ecgDownloadState = ECG_DOWNLOAD_STATE_IDLE;
 				g_waveformSize = g_ecgDownloadTotalSize;
+				g_peakIndex = beatPeakDetect(g_waveformSize, g_rawControllerData);
+				resumeTriggerDetect();
 			}
 			status = true;
 		}

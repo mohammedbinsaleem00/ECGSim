@@ -8,8 +8,11 @@
 
 #include "TriggerDetectApplication.h"
 #include "Encoder/COBS/cobs.h"
+#include "Stopwatch.h"
 #include "CLIApplication.h"
 #include "customUART.h"
+#include "tim.h"
+
 
 #include <string.h>
 #include <stdio.h>
@@ -18,6 +21,8 @@
 
 
 bool g_triggerReceived = false;
+bool g_pauseTriggerDetect = false;
+
 uint8_t g_decodedTriggerBuffer[TRIGGER_BUFFER_SIZE];
 
 struct triggerBuffer{
@@ -26,6 +31,18 @@ struct triggerBuffer{
 }g_triggerBuffer;
 
 
+
+
+bool triggerDetectApplicationInit()
+{
+	if(createStopwatch(&triggerSw, &htim2, 1000, 5))
+	{
+//		startStopwatch(&triggerSw);
+		return true;
+	}
+
+	return false;
+}
 bool getCharacter(char *receivedCharacter)
 {
 	return UART_ReadByteNonBlocking(TRIGGER_UART, (uint8_t *)receivedCharacter);
@@ -66,13 +83,25 @@ bool constructTriggerPayload()
 	return false;
 }
 
-bool extractTriggerData()
+
+void extractTriggerData()
 {
 	cobs_decode_result decodeResult = cobs_decode(g_decodedTriggerBuffer, TRIGGER_BUFFER_SIZE, g_triggerBuffer.buffer, g_triggerBuffer.triggerIndex);
+
 	resetTriggerBuffer();
-	if(g_decodedTriggerBuffer[0] == 0x02)
+	if(g_decodedTriggerBuffer[7] == 0xA5)
 	{
-		CLI_PrintLine("\nVALID PACKET");
+
+		lapStopwatch(&triggerSw);
+//		if(lapStopwatch(&triggerSw))
+//		{
+//			getAverageLapTime(&triggerSw, &avgLapTime_ms);
+//			char str[30];
+//			int len = sprintf(str,"Avg: %lu ms\n",avgLapTime_ms);
+//			CLI_Print(str,len);
+//		}
+
+
 	}
 }
 
@@ -82,6 +111,8 @@ bool extractTriggerData()
 
 void triggerProcess()
 {
+	if(g_pauseTriggerDetect)
+		return;
 
 	if(constructTriggerPayload() != true)
 	{
@@ -90,4 +121,15 @@ void triggerProcess()
 
 	extractTriggerData();
 
+}
+
+void pauseTriggerDetect()
+{
+	g_pauseTriggerDetect = true;
+	resetTriggerBuffer();
+}
+
+void resumeTriggerDetect()
+{
+	g_pauseTriggerDetect = false;
 }

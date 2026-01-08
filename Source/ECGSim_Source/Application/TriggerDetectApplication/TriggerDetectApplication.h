@@ -9,6 +9,12 @@
 #define TRIGGERDETECTAPPLICATION_TRIGGERDETECTAPPLICATION_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+
+
 void triggerProcess();
+void pauseTriggerDetect();
+void resumeTriggerDetect();
+bool triggerDetectApplicationInit();
 
 #endif /* TRIGGERDETECTAPPLICATION_TRIGGERDETECTAPPLICATION_H_ */

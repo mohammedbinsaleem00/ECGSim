@@ -110,5 +110,6 @@ void OsAppLowerLayerInit(void)
 
 void OsAppUpperLayerInit(void)
 {
+	triggerDetectApplicationInit();
 //	ecgGeneratorAppInit();
 }
