@@ -11,15 +11,32 @@ DAC_MID = DAC_MAX // 2               # 2047
 
 DIVIDER_RATIO = 10.0 / (10000.0 + 10.0)   # ≈ 0.000999
 
-ECG_PP_MV = 3.0   # desired ECG amplitude at RA–LA
+ECG_OFFSET_MV = -0.18    # Calibration offset in mV (adjust to match measured output)
 
-# Required DAC peak-to-peak voltage
-DAC_PP_V = (ECG_PP_MV * 1e-3) / DIVIDER_RATIO   # ≈ 3.0 V
+# Global DAC settings (will be initialized by set_dac_pp_voltage)
+ECG_PP_MV = None
+DAC_PP_V = None
+DAC_PP_CODES = None
+DAC_HALF_SWING = None
 
-# Corresponding DAC peak-to-peak codes
-DAC_PP_CODES = (DAC_PP_V / DAC_VREF) * DAC_MAX
+def set_dac_pp_voltage(ecg_pp_mv):
+    """
+    Set the desired DAC peak-to-peak voltage and recalculate dependent values.
+    
+    Args:
+        ecg_pp_mv: Desired ECG peak-to-peak voltage in millivolts
+    """
+    global ECG_PP_MV, DAC_PP_V, DAC_PP_CODES, DAC_HALF_SWING
+    
+    ECG_PP_MV = ecg_pp_mv + ECG_OFFSET_MV
+    DAC_PP_V = (ECG_PP_MV * 1e-3) / DIVIDER_RATIO
+    DAC_PP_CODES = (DAC_PP_V / DAC_VREF) * DAC_MAX
+    DAC_HALF_SWING = DAC_PP_CODES / 2.0
+    
+    print(f"DAC settings updated: ECG_PP_MV={ECG_PP_MV:.1f}mV, DAC_PP_V={DAC_PP_V:.3f}V, DAC_HALF_SWING={DAC_HALF_SWING:.1f}")
 
-DAC_HALF_SWING = DAC_PP_CODES / 2.0
+# Initialize with default value (3.0 mV + calibration offset)
+# set_dac_pp_voltage(3.0 + ECG_OFFSET_MV)
 
 def ecg_to_dac_3mVpp(ecg):
     """

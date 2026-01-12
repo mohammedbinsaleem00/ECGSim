@@ -31,7 +31,7 @@ except Exception:
 
 import serial.tools.list_ports
 
-from ecg_uart_uploader import ECGUARTUploader, normalize_ecg_endpoints, ecg_to_dac_3mVpp
+from ecg_uart_uploader import ECGUARTUploader, normalize_ecg_endpoints, ecg_to_dac_3mVpp, set_dac_pp_voltage
 
 
 class ConfigWindow(tk.Toplevel):
@@ -346,6 +346,7 @@ class App:
         minimumLength = int(required_len / 4)
         isolated_ecg = ecg[minimumLength:-minimumLength]
         normalized_ecg = normalize_ecg_endpoints(isolated_ecg)
+        set_dac_pp_voltage(2.0)
         dac_ecg = ecg_to_dac_3mVpp(normalized_ecg)
         return dac_ecg
 
