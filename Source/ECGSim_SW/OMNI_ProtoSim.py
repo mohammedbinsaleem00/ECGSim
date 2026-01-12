@@ -130,17 +130,22 @@ class App:
         self.hr_entry = ttk.Entry(left, textvariable=self.hr_var, width=10)
         self.hr_entry.grid(row=1, column=0, pady=(0, 6))
 
+        ttk.Label(left, text="Amplitude (mV):").grid(row=2, column=0, sticky="w")
+        self.amplitude_var = tk.StringVar(value="3.0")
+        self.amplitude_entry = ttk.Entry(left, textvariable=self.amplitude_var, width=10)
+        self.amplitude_entry.grid(row=3, column=0, pady=(0, 6))
+
         self.port_label = ttk.Label(left, text="COM: (not set)")
-        self.port_label.grid(row=2, column=0, pady=(6, 6))
+        self.port_label.grid(row=4, column=0, pady=(6, 6))
 
         btn_cfg = ttk.Button(left, text="Configure", command=self.open_config)
-        btn_cfg.grid(row=3, column=0, sticky="ew", pady=(0, 6))
+        btn_cfg.grid(row=5, column=0, sticky="ew", pady=(0, 6))
 
         btn_download = ttk.Button(left, text="Download", command=self.start_download)
-        btn_download.grid(row=4, column=0, sticky="ew", pady=(0, 6))
+        btn_download.grid(row=6, column=0, sticky="ew", pady=(0, 6))
 
         self.btn_benchmark = ttk.Button(left, text="Benchmark", command=self.toggle_benchmark)
-        self.btn_benchmark.grid(row=5, column=0, sticky="ew")
+        self.btn_benchmark.grid(row=7, column=0, sticky="ew")
 
         # Status area + progress
         self.log = tk.Text(right, height=12, wrap="word", state="disabled")
@@ -313,12 +318,22 @@ class App:
             messagebox.showinfo("Busy", "A download is already in progress")
             return
 
+        # Validate heart rate
         try:
             hr = float(self.hr_var.get())
-            if hr <= 30:
+            if hr < 30 or hr > 300:
                 raise ValueError()
         except Exception:
-            messagebox.showerror("Invalid HR", "Please enter a valid heart rate > 0")
+            messagebox.showerror("Invalid HR", "Please enter a valid heart rate between 30 and 300 bpm")
+            return
+
+        # Validate amplitude
+        try:
+            amplitude = float(self.amplitude_var.get())
+            if amplitude < 0.1 or amplitude > 3.0:
+                raise ValueError()
+        except Exception:
+            messagebox.showerror("Invalid Amplitude", "Please enter a valid amplitude between 0.1 and 3.0 mV")
             return
 
         if not self.selected_port:
@@ -328,10 +343,10 @@ class App:
         self.sending = True
         self.progress['value'] = 0
         self.progress_label.config(text="Preparing")
-        thread = threading.Thread(target=self._download_thread, args=(hr,), daemon=True)
+        thread = threading.Thread(target=self._download_thread, args=(hr, amplitude), daemon=True)
         thread.start()
 
-    def _generate_ecg(self, hr):
+    def _generate_ecg(self, hr, amplitude):
         sampling_rate = 1000
         required_len = int(2 * sampling_rate * (60.0 / hr))  # produce ~2 beats
 
@@ -346,11 +361,11 @@ class App:
         minimumLength = int(required_len / 4)
         isolated_ecg = ecg[minimumLength:-minimumLength]
         normalized_ecg = normalize_ecg_endpoints(isolated_ecg)
-        set_dac_pp_voltage(2.0)
+        set_dac_pp_voltage(amplitude)
         dac_ecg = ecg_to_dac_3mVpp(normalized_ecg)
         return dac_ecg
 
-    def _download_thread(self, hr):
+    def _download_thread(self, hr, amplitude):
         # Stop benchmark if it's running
         was_benchmark_active = self.benchmark_active
         if was_benchmark_active:
@@ -358,7 +373,7 @@ class App:
         
         try:
             self.log_msg("Generating ECG data...")
-            dac_ecg = self._generate_ecg(hr)
+            dac_ecg = self._generate_ecg(hr, amplitude)
             total = len(dac_ecg)
             self.root.after(0, lambda: self.progress.configure(maximum=total))
 
@@ -372,9 +387,9 @@ class App:
                 return
 
             # Step 1: firmware info
-            self.log_msg("Requesting firmware info...")
+            self.log_msg("Probing OMNI_ProtoSim Device...")
             if not self._silent_call(uploader.get_firmware_info):
-                self.log_msg("Firmware info failed")
+                self.log_msg("Probing failed. Please check connection.")
                 self._silent_call(uploader.disconnect)
                 self.sending = False
                 return

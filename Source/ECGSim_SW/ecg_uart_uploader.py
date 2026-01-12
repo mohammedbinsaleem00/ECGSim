@@ -11,7 +11,7 @@ DAC_MID = DAC_MAX // 2               # 2047
 
 DIVIDER_RATIO = 10.0 / (10000.0 + 10.0)   # ≈ 0.000999
 
-ECG_OFFSET_MV = -0.18    # Calibration offset in mV (adjust to match measured output)
+ECG_OFFSET_MV = -0.24    # Calibration offset in mV (adjust to match measured output)
 
 # Global DAC settings (will be initialized by set_dac_pp_voltage)
 ECG_PP_MV = None
@@ -28,7 +28,10 @@ def set_dac_pp_voltage(ecg_pp_mv):
     """
     global ECG_PP_MV, DAC_PP_V, DAC_PP_CODES, DAC_HALF_SWING
     
-    ECG_PP_MV = ecg_pp_mv + ECG_OFFSET_MV
+    if ecg_pp_mv <= 1.5:
+        ECG_PP_MV = ecg_pp_mv 
+    else:
+        ECG_PP_MV = ecg_pp_mv + ECG_OFFSET_MV
     DAC_PP_V = (ECG_PP_MV * 1e-3) / DIVIDER_RATIO
     DAC_PP_CODES = (DAC_PP_V / DAC_VREF) * DAC_MAX
     DAC_HALF_SWING = DAC_PP_CODES / 2.0
@@ -67,10 +70,17 @@ def ecg_to_dac_3mVpp(ecg):
     # 2️⃣ Normalize to [-1, +1]
     ecg_norm = 2.0 * (ecg - vmin) / vrange - 1.0
 
-    # 3️⃣ Scale to DAC
-    dac = DAC_MID + ecg_norm * DAC_HALF_SWING
+    # 3️⃣ Calculate optimal DAC midpoint based on valid range for this amplitude
+    # The valid range is constrained by: [DAC_HALF_SWING, DAC_MAX - DAC_HALF_SWING]
+    # Position optimally within this range
+    valid_min = DAC_HALF_SWING
+    valid_max = DAC_MAX - DAC_HALF_SWING
+    dac_mid_target = (valid_min + valid_max) / 2.0
 
-    # 4️⃣ Clamp and convert
+    # 4️⃣ Scale to DAC
+    dac = dac_mid_target + ecg_norm * DAC_HALF_SWING
+
+    # 5️⃣ Clamp and convert
     dac = np.clip(dac, 0, DAC_MAX)
 
     return dac.astype(np.uint16)
