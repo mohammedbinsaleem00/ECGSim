@@ -1,10 +1,13 @@
-name: Build and Release EXE on -BUILD tags
+name: Build and Release EXE on -v* tags
 
 on:
   push:
     tags:
       - 'v*'
-
+      
+permissions:
+  contents: write
+  
 jobs:
   build:
     runs-on: windows-latest
