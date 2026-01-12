@@ -191,6 +191,7 @@ class App:
         self.ax.set_ylabel("Avg Trigger Time (ms)")
         self.ax.set_title("Benchmark Monitor")
         self.ax.grid(True)
+        self.fig.tight_layout()
 
         self.plot_canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.plot_canvas.get_tk_widget().pack(fill="both", expand=True)
